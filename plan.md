@@ -386,10 +386,11 @@ LOG_LEVEL=info
 
 ## 10. 扩展计划
 
-### v1.1
-- [ ] 支持增量 review（只分析新增/修改的代码）
-- [ ] 支持多语言 prompt
-- [ ] 支持自定义 AI 模型
+### v1.1 ✅ 已完成
+- [x] 支持增量 review（只分析新增/修改的代码）
+- [x] 支持多语言 prompt（zh/en）
+- [x] 支持多 AI 模型（DeepSeek/Claude/智谱GLM）
+- [x] 评论去重（自动删除旧 review）
 
 ### v1.2
 - [ ] 学习用户反馈（标记误报）
@@ -405,11 +406,11 @@ LOG_LEVEL=info
 
 ## 11. 当前状态
 
-**完成进度: 95%**
+**完成进度: 100% v1.0 + v1.1**
 
 **单元测试**: ✅ 已实现 (66 个测试用例)
 **集成测试**: ✅ 已实现 (5 个测试用例)
-**部署测试**: ⏳ 待实际环境验证
+**部署测试**: ✅ 已通过实际 PR 验证
 
 | 模块 | 状态 | 文件 |
 |------|------|------|
@@ -426,9 +427,13 @@ LOG_LEVEL=info
 | 文档 | ✅ | `README.md`, `CLAUDE.md` |
 | 单元测试 | ✅ | `tests/unit/*.test.js` (66 测试) |
 | 集成测试 | ✅ | `tests/integration/*.test.js` (5 测试) |
-| 部署测试 | ⏳ | 待实际环境验证 |
+| 部署测试 | ✅ | 已通过 PR #1 #2 验证 |
+| 增量 review | ✅ | `src/analyzer/diff-parser.js` |
+| 多 AI 提供商 | ✅ | `src/ai/claude.js` (DeepSeek/Claude/智谱) |
+| 多语言 prompt | ✅ | `src/ai/prompts/review.js` (zh/en) |
+| 评论去重 | ✅ | `src/github/review.js` |
 
-**下一步:**
-1. 在实际 GitHub 仓库中进行测试
-2. 根据使用反馈优化 prompts
-3. 完善错误处理和日志
+**下一步 (v1.2):**
+1. 用户反馈学习（标记误报）
+2. 生成 review 报告（PDF/HTML）
+3. 支持 GitLab/Bitbucket
