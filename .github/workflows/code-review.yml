@@ -34,4 +34,5 @@ jobs:
           AI_MODEL: ${{ vars.AI_MODEL || 'deepseek-chat' }}
           MAX_TOKENS: ${{ vars.MAX_TOKENS || '4096' }}
           LOG_LEVEL: ${{ vars.LOG_LEVEL || 'info' }}
+          REVIEW_MODE: ${{ vars.REVIEW_MODE || 'incremental' }}
         run: node src/index.js

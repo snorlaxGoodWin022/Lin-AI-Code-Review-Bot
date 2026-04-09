@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { getLogger } from './utils/logger.js';
 import { getPullRequestUrl, getDiff, getChangedFiles } from './github/pr.js';
-import { parseDiffContent, getFileName, getFileDiffText } from './analyzer/diff-parser.js';
+import { parseDiffContent, getFileName, getFileDiffText, getIncrementalDiffText } from './analyzer/diff-parser.js';
 import { filterFiles } from './analyzer/filter.js';
 import { chunkDiff } from './analyzer/chunker.js';
 import { analyzeCode } from './ai/claude.js';
@@ -49,10 +49,17 @@ async function main() {
 
   // 5. 分析每个文件
   const allIssues = [];
+  const incrementalMode = (process.env.REVIEW_MODE || 'incremental') === 'incremental';
 
   for (const file of filesToReview) {
     const fileName = getFileName(file);
-    const fileDiff = getFileDiffText(file);
+    const fileDiff = incrementalMode ? getIncrementalDiffText(file) : getFileDiffText(file);
+
+    // 增量模式下，如果没有新增行则跳过
+    if (incrementalMode && fileDiff.trim().split('\n').length <= 2) {
+      logger.info(`跳过无新增代码的文件: ${fileName}`);
+      continue;
+    }
 
     // 5.1 自定义规则检查
     const ruleIssues = checkCustomRules(fileName, fileDiff, rules);
