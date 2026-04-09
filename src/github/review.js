@@ -94,6 +94,70 @@ export async function createReviewComment(owner, repo, pullNumber, reviewId, com
   });
 }
 
+export async function getExistingBotReviews(owner, repo, pullNumber) {
+  const octokit = getOctokit();
+  const { data: reviews } = await octokit.rest.pulls.listReviews({
+    owner,
+    repo,
+    pull_number: pullNumber,
+  });
+
+  // 只获取 github-actions bot 发布的 review
+  const botReviews = reviews.filter(
+    (r) => r.user.login === 'github-actions[bot]' && r.body
+  );
+
+  // 提取已报告过的文件+行号+标题作为去重 key
+  const reported = new Set();
+  for (const review of botReviews) {
+    // 匹配模式: **文件**: `xxx`  + 行号 + 标题
+    const fileMatches = review.body.matchAll(/\*\*文件\*\*: `([^`]+)`(?::(\d+))?/g);
+    for (const m of fileMatches) {
+      reported.add(m[1] + ':' + (m[2] || ''));
+    }
+    // 匹配标题行: **1. xxx** 或 **N. xxx**
+    const titleMatches = review.body.matchAll(/\*\*\d+\.\s+(.+?)\*\*/g);
+    for (const m of titleMatches) {
+      reported.add(m[1]);
+    }
+  }
+  return reported;
+}
+
+export function deduplicateIssues(issues, reportedKeys) {
+  return issues.filter((issue) => {
+    // 按 file+line 去重
+    const locationKey = `${issue.file}:${issue.line || ''}`;
+    if (reportedKeys.has(locationKey)) return false;
+    // 按标题去重
+    if (issue.title && reportedKeys.has(issue.title)) return false;
+    return true;
+  });
+}
+
+export async function deletePreviousBotReviews(owner, repo, pullNumber) {
+  const octokit = getOctokit();
+  const { data: reviews } = await octokit.rest.pulls.listReviews({
+    owner,
+    repo,
+    pull_number: pullNumber,
+  });
+
+  const botReviews = reviews.filter(
+    (r) => r.user.login === 'github-actions[bot]'
+  );
+
+  for (const review of botReviews) {
+    await octokit.rest.pulls.deletePendingReview({
+      owner,
+      repo,
+      pull_number: pullNumber,
+      review_id: review.id,
+    });
+  }
+  return botReviews.length;
+}
+
 export async function addLabels(owner, repo, pullNumber, issues) {
   const octokit = getOctokit();
   const labels = new Set();

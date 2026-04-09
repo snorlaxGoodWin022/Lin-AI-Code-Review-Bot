@@ -6,7 +6,7 @@ import { filterFiles } from './analyzer/filter.js';
 import { chunkDiff } from './analyzer/chunker.js';
 import { analyzeCode } from './ai/claude.js';
 import { buildReviewPrompt } from './ai/prompts/review.js';
-import { createReviewSummary, addLabels } from './github/review.js';
+import { createReviewSummary, addLabels, deletePreviousBotReviews, deduplicateIssues } from './github/review.js';
 import { loadConfig } from './config/loader.js';
 import { extractRules, extractIgnorePatterns, checkCustomRules } from './config/rules.js';
 import { RateLimiter } from './utils/rate-limiter.js';
@@ -107,12 +107,22 @@ async function main() {
 
   logger.info(`共发现 ${allIssues.length} 个问题`);
 
-  // 6. 发布 Review
+  // 6. 去重：删除旧的 bot review，只保留最新结果
+  try {
+    const deletedCount = await deletePreviousBotReviews(owner, repo, pullNumber);
+    if (deletedCount > 0) {
+      logger.info(`已删除 ${deletedCount} 条旧 review 评论（去重）`);
+    }
+  } catch (error) {
+    logger.warn(`删除旧 review 失败: ${error.message}`);
+  }
+
+  // 7. 发布 Review
   const summaryBody = formatSummaryBody(filesToReview.length, allIssues);
   await createReviewSummary(owner, repo, pullNumber, summaryBody);
   logger.info('已发布 Review 总结');
 
-  // 7. 添加标签
+  // 8. 添加标签
   await addLabels(owner, repo, pullNumber, allIssues);
   logger.info('已添加标签');
 
