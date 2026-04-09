@@ -35,4 +35,5 @@ jobs:
           MAX_TOKENS: ${{ vars.MAX_TOKENS || '4096' }}
           LOG_LEVEL: ${{ vars.LOG_LEVEL || 'info' }}
           REVIEW_MODE: ${{ vars.REVIEW_MODE || 'incremental' }}
+          REVIEW_LANGUAGE: ${{ vars.REVIEW_LANGUAGE || 'zh' }}
         run: node src/index.js
