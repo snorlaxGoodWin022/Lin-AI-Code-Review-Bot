@@ -66,17 +66,37 @@ async function main() {
         const prompt = buildReviewPrompt(chunk, fileName, rules);
         const result = await analyzeCode(prompt);
 
-        // 解析 AI 返回的 JSON
-        const jsonMatch = result.content.match(/```json\s*([\s\S]*?)```/);
+        // 解析 AI 返回的 JSON（兼容多种格式）
+        let parsed = null;
+        const content = result.content;
+
+        // 尝试 1: ```json ... ``` 包裹
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)```/);
         if (jsonMatch) {
-          try {
-            const parsed = JSON.parse(jsonMatch[1]);
-            if (parsed.issues) {
-              allIssues.push(...parsed.issues);
-            }
-          } catch (parseError) {
-            logger.warn(`解析 AI 返回结果失败 (${fileName}): ${parseError.message}`);
+          try { parsed = JSON.parse(jsonMatch[1]); } catch {}
+        }
+
+        // 尝试 2: ``` ... ``` 包裹
+        if (!parsed) {
+          const codeMatch = content.match(/```\s*([\s\S]*?)```/);
+          if (codeMatch) {
+            try { parsed = JSON.parse(codeMatch[1]); } catch {}
           }
+        }
+
+        // 尝试 3: 直接找 { ... } JSON 对象
+        if (!parsed) {
+          const braceMatch = content.match(/\{[\s\S]*\}/);
+          if (braceMatch) {
+            try { parsed = JSON.parse(braceMatch[0]); } catch {}
+          }
+        }
+
+        if (parsed && parsed.issues) {
+          allIssues.push(...parsed.issues);
+          logger.info(`AI 发现 ${parsed.issues.length} 个问题 (${fileName})`);
+        } else {
+          logger.warn(`AI 未返回有效 JSON (${fileName})，原始内容: ${content.substring(0, 200)}`);
         }
       } catch (error) {
         logger.error(`分析文件 ${fileName} 失败: ${error.message}`);

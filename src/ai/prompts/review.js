@@ -17,23 +17,11 @@ ${customRules.map((rule) => `- [${rule.severity}] ${rule.name}: ${rule.message} 
 5. **可维护性**: 代码复杂度、重复代码、设计模式
 ${rulesSection}
 
-## 输出格式
-请严格按以下 JSON 格式输出，不要包含其他内容：
-\`\`\`json
-{
-  "issues": [
-    {
-      "severity": "P0|P1|P2",
-      "title": "问题标题",
-      "file": "${fileName}",
-      "line": 行号或null,
-      "description": "问题描述",
-      "suggestion": "修复建议",
-      "codeExample": "修复后的代码示例或null"
-    }
-  ]
-}
-\`\`\`
+## 重要：输出格式
+请直接输出纯 JSON，不要用 markdown 代码块包裹，不要添加任何其他文字：
+{"issues": [{"severity": "P0或P1或P2", "title": "问题标题", "file": "${fileName}", "line": 行号或null, "description": "问题描述", "suggestion": "修复建议", "codeExample": "修复代码或null"}]}
+
+如果没有发现问题，返回：{"issues": []}
 
 严重程度定义：
 - P0: 严重问题（安全漏洞、必现Bug、数据丢失风险）
@@ -43,7 +31,5 @@ ${rulesSection}
 ## 代码变更
 文件: ${fileName}
 
-\`\`\`diff
-${diff}
-\`\`\``;
+${diff}`;
 }
